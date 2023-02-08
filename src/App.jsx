@@ -13,60 +13,104 @@ import TrashIcon from './components/page-icons/TrashIcon.jsx'
 export default () => {
 	const [title, setTitle] = useState('')
 	const [text, setText] = useState('')
-	const [data, setData] = useState([])
+	// const [data, setData] = useState([])
 	const [selectedNote, setSelectedNote] = useState({})
 
-	useEffect(() => {
-		const getNotes = async () => {
-			const response = await fetch('/api/notes/get')
-			const newData = await response.json()
-			setData(newData)
+	const [notes, setNotes] = useState([])
+
+	const loadNotes = async () => {
+		try {
+			const res = await fetch('/.netlify/functions/notes')
+			const notes = await res.json()
+			setNotes(notes)
+		} catch (err) {
+			console.error(err)
 		}
-		getNotes()
+	}
+
+	useEffect(() => {
+		loadNotes()
 	}, [])
+
+	// useEffect(() => {
+	// 	const getNotes = async () => {
+	// 		const response = await fetch('/api/notes/get')
+	// 		const newData = await response.json()
+	// 		setData(newData)
+	// 	}
+	// 	getNotes()
+	// }, [])
 
 	const handleNoteClick = (note) => {
 		setSelectedNote(note)
 	}
 
-	const addNote = () => {
+	const resetNote = () => {
 		setSelectedNote({})
 		setTitle('')
 		setText('')
 	}
 
-	const saveNote = (newNote) =>
-		fetch(`/api/notes/post`, {
-			method: 'POST',
-			headers: {
-				'Content-Type': 'application/json',
-			},
-			body: JSON.stringify(newNote),
-		}).then(async () => {
-			const response = await fetch('/api/notes/get')
-			const updatedData = await response.json()
-			setData(updatedData)
-		})
-
-	const handleSaveNote = () => {
-		const newNote = {
-			title: title,
-			text: text,
+	const saveNote = async () => {
+		try {
+			await fetch('/.netlify/functions/notes', {
+				method: 'POST',
+				body: JSON.stringify({
+					title,
+					text
+				})
+			})
+			resetNote()
+			loadNotes()
+		} catch (err) {
+			console.error(err)
 		}
-		saveNote(newNote)
-		setSelectedNote({})
-		setTitle('')
-		setText('')
 	}
 
-	const deleteNote = (noteId) =>
-		fetch(`/api/notes/delete/${noteId}`, {
-			method: 'DELETE',
-		}).then(async () => {
-			const response = await fetch('/api/notes/get')
-			const updatedData = await response.json()
-			setData(updatedData)
-		}, setSelectedNote({}))
+	// const saveNote = (newNote) =>
+	// 	fetch(`/api/notes/post`, {
+	// 		method: 'POST',
+	// 		headers: {
+	// 			'Content-Type': 'application/json',
+	// 		},
+	// 		body: JSON.stringify(newNote),
+	// 	}).then(async () => {
+	// 		const response = await fetch('/api/notes/get')
+	// 		const updatedData = await response.json()
+	// 		setData(updatedData)
+	// 	})
+
+	// const handleSaveNote = () => {
+	// 	const newNote = {
+	// 		title: title,
+	// 		text: text,
+	// 	}
+	// 	saveNote(newNote)
+	// 	setSelectedNote({})
+	// 	setTitle('')
+	// 	setText('')
+	// }
+
+	const deleteNote = async () => {
+		try {
+			await fetch('/.netlify/functions/notes', {
+				method: 'DELETE',
+				body: JSON.stringify({ id: notes.id })
+			})
+			loadCourses()
+		} catch (err) {
+			console.error(err)
+		}
+	}
+
+	// const deleteNote = (noteId) =>
+	// 	fetch(`/api/notes/delete/${noteId}`, {
+	// 		method: 'DELETE',
+	// 	}).then(async () => {
+	// 		const response = await fetch('/api/notes/get')
+	// 		const updatedData = await response.json()
+	// 		setData(updatedData)
+	// 	}, setSelectedNote({}))
 
 	return (
 		<>
@@ -86,35 +130,35 @@ export default () => {
 						}
 						iconSize='clamp(1.5rem, 0.894rem + 2.265vw, 3.25rem)'
 						iconColor='white'
-						onClick={handleSaveNote}
+						onClick={saveNote}
 					/>
 					<PlusIcon
 						className='new-note'
 						iconSize='clamp(1.5rem, 0.894rem + 2.265vw, 3.25rem)'
 						iconColor='white'
-						onClick={addNote}
+						onClick={resetNote}
 					/>
 				</div>
 			</div>
 
 			<div className='notes-page-wrapper'>
 				<div className='notes-list-container'>
-					{data.map((item, index) => (
+					{notes.map((note, index) => (
 						<Fragment key={index}>
 							<div className='notes-list-item'>
 								<div
 									className='notes-list-item-title'
-									data-status={item === selectedNote ? 'active' : 'inactive'}
+									data-status={note === selectedNote ? 'active' : 'inactive'}
 									onClick={() => {
-										handleNoteClick(item)
+										handleNoteClick(note)
 									}}>
-									{item.title}
+									{note.title}
 								</div>
 								<TrashIcon
 									iconSize='clamp(1.25rem, 1.077rem + 0.647vw, 1.75rem)'
 									iconColor='slategray'
 									onClick={() => {
-										deleteNote(item.id)
+										deleteNote(note.id)
 									}}
 								/>
 							</div>
