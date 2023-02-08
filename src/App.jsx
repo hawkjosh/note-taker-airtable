@@ -97,7 +97,7 @@ export default () => {
 				method: 'DELETE',
 				body: JSON.stringify({ id: notes.id })
 			})
-			loadCourses()
+			loadNotes()
 		} catch (err) {
 			console.error(err)
 		}
